@@ -54,15 +54,15 @@ Each release provides one download per platform:
 
 ### 🍏 macOS (Apple Silicon / arm64)
 
-- Download **`go-calc-vX.Y.Z-macos-arm64.zip`**, unzip, and move **`go-calc.app`** to Applications.
-- The app is **not notarized**, so macOS blocks it the first time with *"Apple could not
-  verify go-Calc is free of malware."* Approve it once:
-  1. Double-click the app — when the warning appears, click **Cancel**.
-  2. Open  **System Settings → Privacy & Security**.
-  3. Scroll to the message about **go-Calc** and click **Open Anyway**, then confirm.
-  4. It opens normally from then on.
-- Prefer the Terminal? Run once: `xattr -dr com.apple.quarantine /Applications/go-calc.app`
-- The downloaded `.zip` also contains a `README.txt` with these same steps.
+- Download **`go-calc-vX.Y.Z-macos-arm64.zip`** and unzip it.
+- The app is **not notarized**, so macOS blocks it with *"Apple could not verify go-Calc is
+  free of malware."* Run this once in Terminal, then open the app normally:
+  ```bash
+  xattr -dr com.apple.quarantine ~/Downloads/go-calc.app
+  ```
+  (On recent macOS the *System Settings → Privacy & Security → Open Anyway* button often
+  doesn't work for un-notarized apps — the command above is the reliable fix.)
+- The downloaded `.zip` also contains a `README.txt` with this step.
 
 ### 🐧 Linux (x64)
 
