@@ -5,7 +5,7 @@ Problem: The app does not open — "Apple could not verify go-Calc is free of ma
 
 Answer: run this command once in Terminal, then open the app normally:
 
-    xattr -dr com.apple.quarantine ~/Downloads/go-calc.app
+    xattr -dr com.apple.quarantine ~/Downloads/go-calc-v0.1.0-macos-arm64/go-calc.app
 
 
 Project & source

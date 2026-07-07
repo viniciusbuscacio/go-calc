@@ -58,7 +58,7 @@ Each release provides one download per platform:
 - The app is **not notarized**, so macOS blocks it with *"Apple could not verify go-Calc is
   free of malware."* Run this once in Terminal, then open the app normally:
   ```bash
-  xattr -dr com.apple.quarantine ~/Downloads/go-calc.app
+  xattr -dr com.apple.quarantine ~/Downloads/go-calc-vX.Y.Z-macos-arm64/go-calc.app
   ```
   (On recent macOS the *System Settings → Privacy & Security → Open Anyway* button often
   doesn't work for un-notarized apps — the command above is the reliable fix.)
