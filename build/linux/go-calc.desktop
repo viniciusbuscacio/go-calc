@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=go-Calc
+Comment=A Windows 11-style calculator built with Go + Wails
+# __EXEC__ and __ICON__ are replaced by scripts/install-linux.sh at install time.
+Exec=__EXEC__
+Icon=__ICON__
+Terminal=false
+Categories=Utility;Calculator;
+# Must match linux.Options.ProgramName in main.go so GNOME/Wayland maps the
+# running window to this .desktop file and shows its icon in the dock.
+StartupWMClass=go-calc

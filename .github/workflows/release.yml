@@ -1,0 +1,112 @@
+name: release
+
+# Runs when you push a version tag, e.g.:
+#   git tag v1.0.0
+#   git push origin v1.0.0
+# It builds on all three OSes, packages each binary, and attaches the files to
+# the GitHub Release for that tag (public, permanent download links).
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # required to create/update the Release and upload assets
+
+jobs:
+  release:
+    name: release (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux
+            os: ubuntu-latest
+          - name: windows
+            os: windows-latest
+          - name: macos
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Linux deps
+        if: matrix.name == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+
+      - name: Build
+        run: go run ./tools/build
+
+      - name: Package (Linux)
+        if: matrix.name == 'linux'
+        shell: bash
+        run: |
+          asset="go-calc-${GITHUB_REF_NAME}-linux-amd64.tar.gz"
+          # ship the binary plus desktop-integration files so users can install
+          # it (dock icon, app-grid entry) via scripts/install-linux.sh.
+          mkdir -p pkg/go-calc/build/bin pkg/go-calc/build/linux pkg/go-calc/scripts
+          cp build/bin/go-calc      pkg/go-calc/build/bin/
+          cp build/appicon.png      pkg/go-calc/build/
+          cp build/linux/go-calc.desktop pkg/go-calc/build/linux/
+          cp scripts/install-linux.sh    pkg/go-calc/scripts/
+          tar -C pkg -czf "$asset" go-calc
+          echo "ASSET=$asset" >> "$GITHUB_ENV"
+
+      - name: Package (Windows)
+        if: matrix.name == 'windows'
+        shell: pwsh
+        run: |
+          $asset = "go-calc-$env:GITHUB_REF_NAME-windows-amd64.zip"
+          Compress-Archive -Path build/bin/* -DestinationPath $asset
+          "ASSET=$asset" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Package (macOS)
+        if: matrix.name == 'macos'
+        shell: bash
+        run: |
+          asset="go-calc-${GITHUB_REF_NAME}-macos-arm64.zip"
+          ditto -c -k --keepParent build/bin/go-calc.app "$asset"
+          # bundle the "how to open a non-notarized app" note alongside the app
+          zip -j "$asset" build/darwin/README.txt
+          echo "ASSET=$asset" >> "$GITHUB_ENV"
+
+      - name: Attach to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ASSET }}
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          body: |
+            ## Downloads
+
+            Pick the file for your platform below (under **Assets**).
+
+            ### 🪟 Windows (x64)
+            `go-calc-${{ github.ref_name }}-windows-amd64.zip` — unzip and run **go-calc.exe**.
+
+            ### 🍏 macOS (Apple Silicon / arm64)
+            `go-calc-${{ github.ref_name }}-macos-arm64.zip` — unzip, move **go-calc.app** to Applications.
+            Not notarized: on first launch open **System Settings → Privacy & Security** and click
+            **Open Anyway** (see the `README.txt` inside the zip). Or run `xattr -dr com.apple.quarantine go-calc.app`.
+
+            ### 🐧 Linux (x64)
+            `go-calc-${{ github.ref_name }}-linux-amd64.tar.gz` — extract, then:
+            ```bash
+            cd go-calc && ./scripts/install-linux.sh
+            ```
+            Requires WebKitGTK 4.1: `sudo apt install libwebkit2gtk-4.1-0`.
+
+            ---

@@ -1,0 +1,18 @@
+<!-- Fonte do icone do app. Glifo "calculate" do Material Symbols Outlined
+     sobre um tile arredondado escuro, em BRANCO e no tamanho maximo (quase
+     preenchendo o tile).
+     Para regenerar build/appicon.png (1024x1024, fundo transparente):
+     msedge --headless=new --disable-gpu --default-background-color=00000000 \
+       --screenshot=appicon.png --window-size=1024,1024 <html com este svg> -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#363b43" />
+      <stop offset="1" stop-color="#1e222a" />
+    </linearGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="184" fill="url(#bg)" />
+  <g transform="translate(104,920) scale(0.85)" fill="#ffffff">
+    <path d="M320-240h60v-80h80v-60h-80v-80h-60v80h-80v60h80v80Zm200-30h200v-60H520v60Zm0-100h200v-60H520v60Zm44-152 56-56 56 56 42-42-56-58 56-56-42-42-56 56-56-56-42 42 56 56-56 58 42 42Zm-314-70h200v-60H250v60Zm-50 472q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z" />
+  </g>
+</svg>
