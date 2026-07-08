@@ -188,7 +188,7 @@ go-calc/
 │   ├── settings/            #   preferences persisted as JSON (OS config dir)
 │   └── apiserver/           #   REST server: key + IP allowlist
 ├── frontend/src/            # Vue 3 UI: shell, store (router), views, style tokens
-└── scripts/agent-smoke.py   # end-to-end smoke test over the control plane
+└── tools/smoke/main.go      # end-to-end smoke test over the control plane
 ```
 
 `internal/*` knows nothing about Wails or the frontend. To build the next app you
@@ -207,7 +207,7 @@ go run ./tools/build -test # run tests, then build
 go test ./internal/...    # engine and server tests
 
 # end-to-end: with the app open and the REST server started
-python scripts/agent-smoke.py
+go run ./tools/smoke
 ```
 
 > Tests live under `internal/...`. The root package embeds the built frontend

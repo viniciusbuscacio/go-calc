@@ -124,12 +124,12 @@ running version.
 
 ## Verifying the contract
 
-`scripts/agent-smoke.py` exercises all of the above — health, auth, the `/v1/ax`
+`tools/smoke` exercises all of the above — health, auth, the `/v1/ax`
 fields, direct compute (including big integers and exact decimals), driving the
 UI, every structured error, and a check that **every `testid` advertised in
 `/v1/ax` is reachable on screen**. Run it with the app open and the server
 started:
 
 ```bash
-python scripts/agent-smoke.py
+go run ./tools/smoke
 ```

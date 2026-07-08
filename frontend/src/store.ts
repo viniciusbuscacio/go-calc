@@ -1,5 +1,5 @@
 import { reactive } from "vue";
-import { GetSettings, SetTheme, SetOpacity } from "../wailsjs/go/main/App";
+import { GetSettings, GetVersion, SetTheme, SetOpacity } from "../wailsjs/go/main/App";
 
 export type View = "calc" | "options" | "api";
 
@@ -13,6 +13,10 @@ export const ui = reactive({
   // equals → Calculate round-trip). The UI bridge waits until this reaches 0
   // before reading the screen back, so it never samples a half-settled state.
   busy: 0,
+  // App version, fetched once at startup. Loading it here (not on the About
+  // panel's mount) keeps the version element present the moment the panel
+  // renders, so a UI-state snapshot never races the fetch.
+  version: "",
 });
 
 export function go(view: View) {
@@ -50,6 +54,11 @@ export async function loadSettings() {
   } catch {
     applyTheme("dark");
     applyOpacity(100);
+  }
+  try {
+    ui.version = await GetVersion();
+  } catch {
+    /* leave version empty if the backend isn't reachable */
   }
 }
 
