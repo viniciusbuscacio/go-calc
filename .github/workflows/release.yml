@@ -47,8 +47,12 @@ jobs:
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
 
+      # Inject the tag version (v1.2.3 -> 1.2.3) into appinfo.go's appVersion,
+      # so /v1/ax and Settings -> About report the released version. Flags after
+      # "--" are forwarded by tools/build to `wails build`.
       - name: Build
-        run: go run ./tools/build
+        shell: bash
+        run: go run ./tools/build -- -ldflags "-X main.appVersion=${GITHUB_REF_NAME#v}"
 
       - name: Package (Linux)
         if: matrix.name == 'linux'

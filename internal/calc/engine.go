@@ -44,7 +44,7 @@ func newParser(input string) *parser {
 func (p *parser) parse() (*big.Rat, error) {
 	p.skipSpaces()
 	if p.done() {
-		return nil, fmt.Errorf("digite uma conta")
+		return nil, fmt.Errorf("enter an expression")
 	}
 
 	result, err := p.parseExpression()
@@ -54,7 +54,7 @@ func (p *parser) parse() (*big.Rat, error) {
 
 	p.skipSpaces()
 	if !p.done() {
-		return nil, fmt.Errorf("operador inesperado")
+		return nil, fmt.Errorf("unexpected operator")
 	}
 
 	return result, nil
@@ -112,7 +112,7 @@ func (p *parser) parseTerm() (*big.Rat, error) {
 				return nil, err
 			}
 			if right.Sign() == 0 {
-				return nil, fmt.Errorf("divisao por zero")
+				return nil, fmt.Errorf("division by zero")
 			}
 			left = new(big.Rat).Quo(left, right)
 		default:
@@ -164,7 +164,7 @@ func (p *parser) parsePrimary() (*big.Rat, error) {
 		}
 		p.skipSpaces()
 		if p.peek() != ')' {
-			return nil, fmt.Errorf("parenteses nao fechado")
+			return nil, fmt.Errorf("unclosed parenthesis")
 		}
 		p.pos++
 		return value, nil
@@ -181,7 +181,7 @@ func (p *parser) parseNumber() (*big.Rat, error) {
 		if current == '.' {
 			dotCount++
 			if dotCount > 1 {
-				return nil, fmt.Errorf("numero invalido")
+				return nil, fmt.Errorf("invalid number")
 			}
 			p.pos++
 			continue
@@ -193,12 +193,12 @@ func (p *parser) parseNumber() (*big.Rat, error) {
 	}
 
 	if start == p.pos {
-		return nil, fmt.Errorf("numero esperado")
+		return nil, fmt.Errorf("expected a number")
 	}
 
 	value, ok := new(big.Rat).SetString(string(p.input[start:p.pos]))
 	if !ok {
-		return nil, fmt.Errorf("numero invalido")
+		return nil, fmt.Errorf("invalid number")
 	}
 
 	return value, nil

@@ -10,8 +10,10 @@ package main
 // breaking change to the shape below so clients can detect drift.
 const axSchemaVersion = 1
 
-// appVersion is the app/framework version reported in /v1/ax.
-const appVersion = "0.1.0"
+// appVersion is the app/framework version reported in /v1/ax. It is a var, not
+// a const, so release builds can inject the tag version at link time via
+// `-ldflags "-X main.appVersion=..."` (see .github/workflows/release.yml).
+var appVersion = "0.1.0"
 
 // Risk levels classify how careful a client should be before invoking a control:
 //
@@ -131,7 +133,7 @@ func (a *App) appInfo() any {
 			{Code: "unauthorized", Status: 401, Meaning: "invalid or missing X-API-Key header"},
 			{Code: "forbidden", Status: 403, Meaning: "the client IP is not in the allowlist"},
 			{Code: "unknown_testid", Status: 404, Meaning: "no control on screen has that testid"},
-			{Code: "method_not_allowed", Status: 405, Meaning: "wrong HTTP method (these endpoints are POST)"},
+			{Code: "method_not_allowed", Status: 405, Meaning: "wrong HTTP method for this endpoint (see the api list: /v1/ui/state, /v1/health and /v1/ax are GET; the rest are POST)"},
 			{Code: "disabled_control", Status: 409, Meaning: "the control exists but is currently disabled"},
 			{Code: "calculation_error", Status: 422, Meaning: "the expression could not be evaluated"},
 			{Code: "ui_timeout", Status: 503, Meaning: "the UI did not respond in time"},
@@ -176,9 +178,10 @@ func (a *App) appInfo() any {
 					Children: []axNode{
 						{Role: "button", Name: "Back", Testid: "back", Action: "return to the calculator", Risk: riskNavigation},
 						{Role: "switch", Name: "Dark mode", Testid: "theme-switch", Action: "toggle between dark and light theme", Risk: riskSafe},
-						{Role: "slider", Name: "Transparency", Testid: "opacity-slider", Action: "set window opacity from 40% to 100%", Risk: riskSafe},
+						{Role: "slider", Name: "Transparency", Testid: "opacity-slider", Action: "set window opacity from 20% to 100%", Risk: riskSafe},
 						{Role: "button", Name: "REST API Server", Testid: "nav-api", Action: "open the REST API server settings", Risk: riskNavigation},
 						{Role: "link", Name: "GitHub", Testid: "open-github", Action: "open the project on GitHub in the default browser", Risk: riskExternal},
+						{Role: "text", Name: "Version", Testid: "app-version", Description: "the app version (About section)"},
 					},
 				},
 				{
@@ -190,15 +193,24 @@ func (a *App) appInfo() any {
 						{Role: "button", Name: "Back", Testid: "back", Action: "return to Settings", Risk: riskNavigation},
 						{Role: "button", Name: "Start/Stop", Testid: "toggle-server", Action: "start or stop the REST server", Risk: riskSensitive},
 						{Role: "status", Name: "Server status", Testid: "status", Description: "shows Running or Stopped"},
+						{Role: "text", Name: "Server error", Testid: "server-error", Description: "why the last server operation failed; rendered only after a failure"},
+						{Role: "button", Name: "Shuffle port", Testid: "shuffle-port", Action: "pick a random free port (8700-8799) and restart the server if running", Risk: riskSensitive},
 						{Role: "switch", Name: "Start automatically", Testid: "autostart", Action: "toggle starting the server on app launch", Risk: riskSensitive},
+						{Role: "switch", Name: "Use HTTPS", Testid: "use-https", Action: "toggle HTTPS (self-signed) vs plain HTTP; restarts the server if running", Risk: riskSensitive},
 						{Role: "table", Name: "Allowed IPs", Testid: "allowlist", Description: "CIDR allowlist controlling who may call the API"},
+						{Role: "button", Name: "Remove IP", Testid: "remove-<cidr>", Description: "one per allowlist row; the testid embeds the CIDR, e.g. remove-127.0.0.1/32", Action: "remove that CIDR from the allowlist", Risk: riskSensitive},
 						{Role: "textbox", Name: "New IP", Testid: "new-ip", Action: "type a CIDR (e.g. 192.168.0.0/24) to allow", Risk: riskSafe},
 						{Role: "button", Name: "Add IP", Testid: "add-ip", Action: "add the typed CIDR to the allowlist", Risk: riskSensitive},
+						{Role: "text", Name: "IP error", Testid: "ip-error", Description: "why the typed CIDR was rejected; rendered only after a failure"},
 						{Role: "text", Name: "Agent instructions", Testid: "agent-instructions", Description: "copy-paste snippet: base URL, key, and starting endpoints"},
 						{Role: "button", Name: "Copy instructions", Testid: "copy-instructions", Action: "copy the agent instructions", Risk: riskSafe},
 						{Role: "text", Name: "Access key", Testid: "api-key", Description: "the API key (masked)"},
 						{Role: "button", Name: "Copy key", Testid: "copy-key", Action: "copy the API key", Risk: riskSensitive},
 						{Role: "button", Name: "Rotate key", Testid: "rotate-key", Action: "generate a new API key", Risk: riskSensitive},
+						{Role: "text", Name: "Certificate pin", Testid: "fingerprint", Description: "the TLS public-key pin (shortened); visible only while serving HTTPS"},
+						{Role: "button", Name: "Copy pin", Testid: "copy-fingerprint", Action: "copy the full TLS public-key pin (sha256//...)", Risk: riskSafe},
+						{Role: "text", Name: "Test command", Testid: "curl-example", Description: "a ready-to-run curl with the pin baked in; visible only while serving HTTPS"},
+						{Role: "button", Name: "Copy test command", Testid: "copy-curl", Action: "copy the ready-to-run curl example", Risk: riskSafe},
 					},
 				},
 			},

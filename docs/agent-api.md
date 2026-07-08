@@ -114,7 +114,7 @@ Every error has the same shape; branch on `code`, not on the message text:
 | `unauthorized` | 401 | invalid or missing `X-API-Key` |
 | `forbidden` | 403 | client IP not in the allowlist |
 | `unknown_testid` | 404 | no control on screen has that `testid` |
-| `method_not_allowed` | 405 | wrong HTTP method (these endpoints are POST) |
+| `method_not_allowed` | 405 | wrong HTTP method for this endpoint (`/v1/ui/state`, `/v1/health` and `/v1/ax` are GET; the rest are POST) |
 | `disabled_control` | 409 | the control exists but is currently disabled |
 | `calculation_error` | 422 | the expression could not be evaluated |
 | `ui_timeout` | 503 | the UI did not respond in time |

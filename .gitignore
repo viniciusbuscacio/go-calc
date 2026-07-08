@@ -23,3 +23,9 @@ Thumbs.db
 # Frontend caches
 frontend/package.json.md5
 *.local
+
+# Python bytecode from the smoke-test script
+__pycache__/
+
+# Local planning scratch, not project content
+/specs/

@@ -103,9 +103,13 @@ async function toggleServer() {
 
 async function shufflePort() {
   busy.value = true;
+  serverError.value = "";
   busyInc();
   try {
     applyStatus(await ShuffleAPIPort());
+  } catch (e) {
+    serverError.value = typeof e === "string" ? e : "failed to change the port";
+    applyStatus(await GetAPIStatus());
   } finally {
     busy.value = false;
     busyDec();
@@ -126,10 +130,14 @@ async function onAutoStart(e: Event) {
 async function onHttps(e: Event) {
   const v = (e.target as HTMLInputElement).checked;
   useHttps.value = v;
+  serverError.value = "";
   busyInc();
   try {
     // returns the fresh status (scheme + fingerprint) since the server restarts
     applyStatus(await SetHTTPS(v));
+  } catch (err) {
+    serverError.value = typeof err === "string" ? err : "failed to switch HTTPS";
+    applyStatus(await GetAPIStatus());
   } finally {
     busyDec();
   }
@@ -146,24 +154,35 @@ async function addEntry() {
   } catch (e) {
     entryError.value = typeof e === "string" ? e : "invalid IP/mask";
   } finally {
+    // The change restarts a running server; re-read the status so the pill
+    // can't keep showing "Running" if the restart failed.
+    applyStatus(await GetAPIStatus());
     busyDec();
   }
 }
 
 async function removeEntry(entry: string) {
+  serverError.value = "";
   busyInc();
   try {
     allowlist.value = await RemoveAllowlistEntry(entry);
+  } catch (e) {
+    serverError.value = typeof e === "string" ? e : "failed to remove the IP";
   } finally {
+    applyStatus(await GetAPIStatus());
     busyDec();
   }
 }
 
 async function rotateKey() {
+  serverError.value = "";
   busyInc();
   try {
     apiKey.value = await RotateAPIKey();
+  } catch (e) {
+    serverError.value = typeof e === "string" ? e : "failed to rotate the key";
   } finally {
+    applyStatus(await GetAPIStatus());
     busyDec();
   }
 }

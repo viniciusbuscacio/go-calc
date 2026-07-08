@@ -27,10 +27,13 @@ jobs:
         include:
           - name: windows
             os: windows-latest
+            artifact: build/bin/*
           - name: linux
             os: ubuntu-latest
+            artifact: build/bin/*
           - name: macos
             os: macos-latest
+            artifact: go-calc-macos.zip
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -55,9 +58,17 @@ jobs:
       - name: Build
         run: go run ./tools/build
 
+      # upload-artifact's own zip drops the executable bits inside the .app
+      # bundle, so zip it with ditto first (same approach as release.yml) and
+      # upload the zip instead.
+      - name: Zip .app (macOS)
+        if: matrix.name == 'macos'
+        shell: bash
+        run: ditto -c -k --sequesterRsrc --keepParent build/bin/go-calc.app go-calc-macos.zip
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: go-calc-${{ matrix.name }}
-          path: build/bin/*
+          path: ${{ matrix.artifact }}
           if-no-files-found: warn

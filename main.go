@@ -2,6 +2,8 @@ package main
 
 import (
 	"embed"
+	"fmt"
+	"os"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -32,7 +34,7 @@ func main() {
 			Assets: assets,
 		},
 		Frameless:        true,
-		StartHidden:       true, // shown by the frontend once theme/opacity are applied (avoids startup flicker on Linux)
+		StartHidden:      true, // shown by the frontend once theme/opacity are applied (avoids startup flicker on Linux)
 		BackgroundColour: &options.RGBA{R: 20, G: 24, B: 30, A: 0},
 		OnStartup:        app.startup,
 		Windows: &windows.Options{
@@ -58,6 +60,7 @@ func main() {
 		},
 	})
 	if err != nil {
-		println("Error:", err.Error())
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		os.Exit(1)
 	}
 }

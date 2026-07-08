@@ -17,7 +17,8 @@ Run it while the app is open with the REST server started:
     python scripts/agent-smoke.py
     python scripts/agent-smoke.py --base-url http://127.0.0.1:8737 --api-key <key>
 
-Exit code is 0 when every check passes, 1 otherwise.
+Exit code is 0 when every check passes, non-zero otherwise (1 = a check failed
+or the server is unreachable, 2 = no API key found).
 """
 
 from __future__ import annotations
@@ -243,6 +244,13 @@ def main() -> int:
            st == 409 and err_code(body) == "disabled_control", f"status={st} body={body}")
 
     # --- AX <-> DOM coverage -------------------------------------------------
+    # Some documented testids are not always rendered: "<...>" placeholders
+    # describe dynamic patterns (remove-<cidr>), and these controls only exist
+    # in specific states (an error being shown, HTTPS enabled).
+    conditional = {
+        "server-error", "ip-error",
+        "fingerprint", "copy-fingerprint", "curl-example", "copy-curl",
+    }
     seen: set = set()
     _, state = c.call("GET", "/v1/ui/state")
     seen |= controls(state)          # api view
@@ -250,8 +258,9 @@ def main() -> int:
     seen |= controls(state)          # options view
     _, state = press(c, "back")
     seen |= controls(state)          # calc view
-    missing = sorted(t for t in ax_testids if t not in seen)
-    chk.ok("every ax testid is reachable on screen", not missing,
+    missing = sorted(t for t in ax_testids
+                     if t not in seen and "<" not in t and t not in conditional)
+    chk.ok("every unconditional ax testid is reachable on screen", not missing,
            f"missing={missing}")
 
     print(f"\n{chk.passed} passed, {chk.failed} failed")

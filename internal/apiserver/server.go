@@ -187,13 +187,33 @@ func (s *Server) Stop() error {
 
 // ---- handlers ----
 
-func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
+// maxBodyBytes caps request bodies (1 MB) so a client cannot exhaust memory by
+// streaming an unbounded JSON document.
+const maxBodyBytes = 1 << 20
+
+// requireGET rejects non-GET requests on read-only endpoints with the same
+// structured 405 the POST endpoints emit.
+func requireGET(w http.ResponseWriter, r *http.Request) bool {
+	if r.Method != http.MethodGet {
+		writeErr(w, http.StatusMethodNotAllowed, "method_not_allowed", "use GET")
+		return false
+	}
+	return true
+}
+
+func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+	if !requireGET(w, r) {
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 // handleInfo serves the app descriptor / accessibility tree so an automated
 // client can learn what the app does and how to drive it.
-func (s *Server) handleInfo(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) handleInfo(w http.ResponseWriter, r *http.Request) {
+	if !requireGET(w, r) {
+		return
+	}
 	if s.info == nil {
 		writeErr(w, http.StatusNotFound, "not_found", "no app info")
 		return
@@ -214,6 +234,7 @@ func (s *Server) handleCalc(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusMethodNotAllowed, "method_not_allowed", "use POST")
 		return
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	var req calcRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeErr(w, http.StatusBadRequest, "invalid_json", "request body is not valid JSON")
@@ -235,7 +256,10 @@ func (s *Server) handleCalc(w http.ResponseWriter, r *http.Request) {
 // These drive the real frontend: the client presses actual buttons and reads
 // the actual screen, so it exercises the UI end-to-end (not just the engine).
 
-func (s *Server) handleUIState(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) handleUIState(w http.ResponseWriter, r *http.Request) {
+	if !requireGET(w, r) {
+		return
+	}
 	if s.ui == nil {
 		writeErr(w, http.StatusNotImplemented, "not_implemented", "ui bridge not available")
 		return
@@ -304,6 +328,7 @@ func (s *Server) decodeUI(w http.ResponseWriter, r *http.Request, req any) bool 
 		writeErr(w, http.StatusMethodNotAllowed, "method_not_allowed", "use POST")
 		return false
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		writeErr(w, http.StatusBadRequest, "invalid_json", "request body is not valid JSON")
 		return false

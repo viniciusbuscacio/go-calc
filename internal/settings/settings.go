@@ -13,7 +13,7 @@ import (
 
 type Settings struct {
 	Theme        string   `json:"theme"`        // "dark" | "light"
-	Opacity      int      `json:"opacity"`      // window opacity, 40..100
+	Opacity      int      `json:"opacity"`      // window opacity, 20..100
 	APIAutoStart bool     `json:"apiAutoStart"` // start REST server on app launch
 	APIPort      int      `json:"apiPort"`
 	APIKey       string   `json:"apiKey"`
@@ -77,7 +77,13 @@ func Load() Settings {
 	}
 	var s Settings
 	if err := json.Unmarshal(data, &s); err != nil {
-		return Default()
+		// Corrupt JSON: keep the bad file for inspection and persist fresh
+		// defaults, mirroring the missing-file path — otherwise every launch
+		// would generate (and hand out) a brand-new API key.
+		_ = os.Rename(p, p+".corrupt")
+		s = Default()
+		_ = save(s)
+		return s
 	}
 
 	d := Default()
@@ -87,7 +93,7 @@ func Load() Settings {
 	if s.Opacity < 20 || s.Opacity > 100 {
 		s.Opacity = d.Opacity
 	}
-	if s.APIPort == 0 {
+	if s.APIPort < 1 || s.APIPort > 65535 {
 		s.APIPort = d.APIPort
 	}
 	if s.APIKey == "" {

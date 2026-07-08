@@ -30,6 +30,9 @@ go-Calc is two things at once:
 1. **A calculator.** A clean clone of the Windows 11 Calculator (light and dark
    themes), built with [Wails](https://wails.io) — a **Go** backend that does all
    the math and a **TypeScript + Vue 3** frontend that only paints the screen.
+   One deliberate difference: `%` is a plain postfix percent (`50%` = 0.5, so
+   `200 + 10%` = 200.1), not the Windows 11 "percent of the other operand"
+   (where `200 + 10%` = 220).
 2. **An agent-operable desktop app template.** It ships a small, secured HTTP
    *control plane* so an AI agent can discover the app, press its **real**
    buttons, read the **real** screen, and verify behaviour end-to-end. The
@@ -107,8 +110,11 @@ A: Windows, Linux and macOS.
   (via the keyboard).
 - Builds the whole expression and evaluates only on **`=`** / **Enter**, so
   operator precedence is respected: `2 + 3 × 4 = 14`.
-- **Exact arithmetic** (`math/big` rationals): integers beyond 2⁵³ and sums like
-  `0.1 + 0.2` are precise, with no floating-point noise.
+- **Exact arithmetic** (`math/big` rationals): within a single expression,
+  integers beyond 2⁵³ and sums like `0.1 + 0.2` are precise, with no
+  floating-point noise. One caveat: chaining after `=` reuses the *formatted*
+  result (rounded to 10 decimal places) as the next expression, so
+  `1 ÷ 3 = × 3 =` shows `0.9999999999`.
 - **Settings** (gear in the title bar): light/dark theme, window transparency,
   and a link to the project.
 

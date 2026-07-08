@@ -44,8 +44,6 @@ function collectState() {
   if (formula !== undefined) state.formula = formula;
   const status = text("status");
   if (status !== undefined) state.serverStatus = status;
-  const apiUrl = text("api-url");
-  if (apiUrl !== undefined) state.apiUrl = apiUrl;
 
   const allowlist = el("allowlist");
   if (allowlist) {
@@ -60,15 +58,6 @@ function collectState() {
     if (t) inputs[t] = (n as HTMLInputElement).value;
   });
   if (Object.keys(inputs).length) state.inputs = inputs;
-
-  state.winH = window.innerHeight;
-  const pb = document.querySelector(".panel-body") as HTMLElement | null;
-  if (pb) {
-    state.panelOverflow = pb.scrollHeight - pb.clientHeight;
-    state.neededHeight = Math.ceil(
-      pb.getBoundingClientRect().top + pb.scrollHeight,
-    );
-  }
 
   return state;
 }

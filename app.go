@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"net"
+	"sync"
 
 	"github.com/viniciusbuscacio/go-calc/internal/apiserver"
 	"github.com/viniciusbuscacio/go-calc/internal/calc"
@@ -21,7 +22,13 @@ const (
 // App is the thin Wails adapter. Business logic lives in internal/*; App just
 // wires it to the frontend and owns process-level state (settings + server).
 type App struct {
-	ctx    context.Context
+	ctx context.Context
+	// mu guards cfg: Wails-bound methods and the REST server's UI handlers run
+	// on different goroutines. The rule to avoid deadlocks: lock → copy/mutate
+	// cfg → unlock, and only then call anything slow (settings.Save, server
+	// start/stop). APIAllowlist is copy-on-write (never mutated in place), so a
+	// shallow copy of cfg is safe to read without the lock.
+	mu     sync.Mutex
 	cfg    settings.Settings
 	server *apiserver.Server
 	ui     *uiBridge
@@ -42,9 +49,12 @@ func (a *App) UIAck(id string, state string) {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	a.cfg = settings.Load()
+	cfg := settings.Load()
+	a.mu.Lock()
+	a.cfg = cfg
+	a.mu.Unlock()
 	go fixTaskbarIcon(appTitle)
-	if a.cfg.APIAutoStart {
+	if cfg.APIAutoStart {
 		_ = a.startServer()
 	}
 }
@@ -56,16 +66,27 @@ func (a *App) Calculate(expression string) (string, error) {
 
 // ---- Settings ----
 
-func (a *App) GetSettings() settings.Settings {
+// snapshot returns a copy of the current settings, safe to use without the
+// lock (see the copy-on-write note on App.mu).
+func (a *App) snapshot() settings.Settings {
+	a.mu.Lock()
+	defer a.mu.Unlock()
 	return a.cfg
+}
+
+func (a *App) GetSettings() settings.Settings {
+	return a.snapshot()
 }
 
 func (a *App) SetTheme(theme string) error {
 	if theme != "light" {
 		theme = "dark"
 	}
+	a.mu.Lock()
 	a.cfg.Theme = theme
-	return settings.Save(a.cfg)
+	cfg := a.cfg
+	a.mu.Unlock()
+	return settings.Save(cfg)
 }
 
 func (a *App) SetOpacity(percent int) error {
@@ -75,8 +96,11 @@ func (a *App) SetOpacity(percent int) error {
 	if percent > 100 {
 		percent = 100
 	}
+	a.mu.Lock()
 	a.cfg.Opacity = percent
-	return settings.Save(a.cfg)
+	cfg := a.cfg
+	a.mu.Unlock()
+	return settings.Save(cfg)
 }
 
 // ---- REST API server ----
@@ -90,30 +114,28 @@ type APIStatus struct {
 	Fingerprint string `json:"fingerprint"` // public-key pin, set while TLS is running
 }
 
-// useTLS reports whether the server should serve HTTPS. It is a direct user
-// choice (the "Use HTTPS" toggle), independent of the bind address.
-func (a *App) useTLS() bool {
-	return a.cfg.APIHTTPS
-}
-
-func (a *App) apiURL() string {
+// apiURL builds the URL clients should call for the given settings. The HTTPS
+// scheme is a direct user choice (the "Use HTTPS" toggle), independent of the
+// bind address.
+func apiURL(cfg settings.Settings) string {
 	host := "127.0.0.1"
-	if apiserver.BindHost(a.cfg.APIAllowlist) == "0.0.0.0" {
+	if apiserver.BindHost(cfg.APIAllowlist) == "0.0.0.0" {
 		host = apiserver.OutboundIP()
 	}
 	scheme := "http"
-	if a.useTLS() {
+	if cfg.APIHTTPS {
 		scheme = "https"
 	}
-	return fmt.Sprintf("%s://%s:%d", scheme, host, a.cfg.APIPort)
+	return fmt.Sprintf("%s://%s:%d", scheme, host, cfg.APIPort)
 }
 
 func (a *App) status() APIStatus {
+	cfg := a.snapshot()
 	return APIStatus{
 		Running:     a.server.Running(),
-		Port:        a.cfg.APIPort,
-		URL:         a.apiURL(),
-		TLS:         a.useTLS(),
+		Port:        cfg.APIPort,
+		URL:         apiURL(cfg),
+		TLS:         cfg.APIHTTPS,
 		Fingerprint: a.server.Fingerprint(),
 	}
 }
@@ -123,22 +145,28 @@ func (a *App) startServer() error {
 	if err != nil {
 		return err
 	}
+	cfg := a.snapshot()
 	return a.server.Start(apiserver.Config{
-		Port:      a.cfg.APIPort,
-		Key:       a.cfg.APIKey,
-		Allowlist: a.cfg.APIAllowlist,
-		TLS:       a.useTLS(),
+		Port:      cfg.APIPort,
+		Key:       cfg.APIKey,
+		Allowlist: cfg.APIAllowlist,
+		TLS:       cfg.APIHTTPS,
 		CertDir:   dir,
 	})
 }
 
 // applyIfRunning restarts the server so config changes (key, allowlist) take
-// effect immediately while it is running.
-func (a *App) applyIfRunning() {
-	if a.server.Running() {
-		_ = a.server.Stop()
-		_ = a.startServer()
+// effect immediately while it is running. The error is returned so callers can
+// surface a server that failed to come back up instead of silently showing it
+// as running.
+func (a *App) applyIfRunning() error {
+	if !a.server.Running() {
+		return nil
 	}
+	if err := a.server.Stop(); err != nil {
+		return err
+	}
+	return a.startServer()
 }
 
 func (a *App) StartAPIServer() (APIStatus, error) {
@@ -163,12 +191,19 @@ func (a *App) GetAPIStatus() APIStatus {
 // current one), persists it, and restarts the server if running. It probes for
 // a free port so pressing the button actually escapes an occupied port.
 func (a *App) ShuffleAPIPort() (APIStatus, error) {
-	host := apiserver.BindHost(a.cfg.APIAllowlist)
-	a.cfg.APIPort = pickFreePort(a.cfg.APIPort, host)
-	if err := settings.Save(a.cfg); err != nil {
+	// Probe for the port outside the lock (it binds sockets), then commit it.
+	cur := a.snapshot()
+	port := pickFreePort(cur.APIPort, apiserver.BindHost(cur.APIAllowlist))
+	a.mu.Lock()
+	a.cfg.APIPort = port
+	cfg := a.cfg
+	a.mu.Unlock()
+	if err := settings.Save(cfg); err != nil {
 		return a.status(), err
 	}
-	a.applyIfRunning()
+	if err := a.applyIfRunning(); err != nil {
+		return a.status(), err
+	}
 	return a.status(), nil
 }
 
@@ -193,19 +228,27 @@ func pickFreePort(exclude int, host string) int {
 }
 
 func (a *App) SetAPIAutoStart(v bool) error {
+	a.mu.Lock()
 	a.cfg.APIAutoStart = v
-	return settings.Save(a.cfg)
+	cfg := a.cfg
+	a.mu.Unlock()
+	return settings.Save(cfg)
 }
 
 // SetHTTPS chooses the transport (HTTPS when true, plain HTTP when false), then
 // restarts the server if running so the change (scheme + fingerprint) applies
 // immediately.
 func (a *App) SetHTTPS(v bool) (APIStatus, error) {
+	a.mu.Lock()
 	a.cfg.APIHTTPS = v
-	if err := settings.Save(a.cfg); err != nil {
+	cfg := a.cfg
+	a.mu.Unlock()
+	if err := settings.Save(cfg); err != nil {
 		return a.status(), err
 	}
-	a.applyIfRunning()
+	if err := a.applyIfRunning(); err != nil {
+		return a.status(), err
+	}
 	return a.status(), nil
 }
 
@@ -216,28 +259,39 @@ func (a *App) GetAPIFingerprint() string {
 }
 
 func (a *App) GetAllowlist() []string {
-	return a.cfg.APIAllowlist
+	return a.snapshot().APIAllowlist
 }
 
 func (a *App) AddAllowlistEntry(entry string) ([]string, error) {
 	normalized, err := apiserver.NormalizeCIDR(entry)
 	if err != nil {
-		return a.cfg.APIAllowlist, err
+		return a.snapshot().APIAllowlist, err
 	}
+	a.mu.Lock()
 	for _, e := range a.cfg.APIAllowlist {
 		if e == normalized {
-			return a.cfg.APIAllowlist, nil
+			list := a.cfg.APIAllowlist
+			a.mu.Unlock()
+			return list, nil
 		}
 	}
-	a.cfg.APIAllowlist = append(a.cfg.APIAllowlist, normalized)
-	if err := settings.Save(a.cfg); err != nil {
-		return a.cfg.APIAllowlist, err
+	// Copy-on-write: build a fresh slice instead of appending in place, so
+	// snapshots handed out earlier stay valid without the lock.
+	next := append(append([]string(nil), a.cfg.APIAllowlist...), normalized)
+	a.cfg.APIAllowlist = next
+	cfg := a.cfg
+	a.mu.Unlock()
+	if err := settings.Save(cfg); err != nil {
+		return next, err
 	}
-	a.applyIfRunning()
-	return a.cfg.APIAllowlist, nil
+	if err := a.applyIfRunning(); err != nil {
+		return next, err
+	}
+	return next, nil
 }
 
 func (a *App) RemoveAllowlistEntry(entry string) ([]string, error) {
+	a.mu.Lock()
 	next := make([]string, 0, len(a.cfg.APIAllowlist))
 	for _, e := range a.cfg.APIAllowlist {
 		if e != entry {
@@ -245,28 +299,37 @@ func (a *App) RemoveAllowlistEntry(entry string) ([]string, error) {
 		}
 	}
 	a.cfg.APIAllowlist = next
-	if err := settings.Save(a.cfg); err != nil {
+	cfg := a.cfg
+	a.mu.Unlock()
+	if err := settings.Save(cfg); err != nil {
 		return next, err
 	}
-	a.applyIfRunning()
+	if err := a.applyIfRunning(); err != nil {
+		return next, err
+	}
 	return next, nil
 }
 
 func (a *App) GetAPIKey() string {
-	return a.cfg.APIKey
+	return a.snapshot().APIKey
 }
 
 func (a *App) RotateAPIKey() (string, error) {
+	a.mu.Lock()
 	a.cfg.APIKey = settings.GenerateKey()
-	if err := settings.Save(a.cfg); err != nil {
-		return a.cfg.APIKey, err
+	cfg := a.cfg
+	a.mu.Unlock()
+	if err := settings.Save(cfg); err != nil {
+		return cfg.APIKey, err
 	}
-	a.applyIfRunning()
-	return a.cfg.APIKey, nil
+	if err := a.applyIfRunning(); err != nil {
+		return cfg.APIKey, err
+	}
+	return cfg.APIKey, nil
 }
 
 func (a *App) GetAPIURL() string {
-	return a.apiURL()
+	return apiURL(a.snapshot())
 }
 
 // GetVersion returns the app version so the frontend can show it (Settings →
