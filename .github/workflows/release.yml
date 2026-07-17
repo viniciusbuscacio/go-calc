@@ -85,7 +85,15 @@ jobs:
           ditto -c -k --keepParent build/bin/go-calc.app "$asset"
           # bundle the "how to open a non-notarized app" note alongside the app
           zip -j "$asset" build/darwin/README.txt
-          echo "ASSET=$asset" >> "$GITHUB_ENV"
+          # drag-to-Applications DMG via go-installer's mkdmg. The DMG is for
+          # humans; the in-app updater keeps consuming the zip.
+          dmg="go-calc-${GITHUB_REF_NAME}-macos-arm64.dmg"
+          python3 -m venv /tmp/dmgvenv
+          /tmp/dmgvenv/bin/pip -q install ds-store mac-alias
+          go run github.com/viniciusbuscacio/go-installer/cmd/mkdmg@v0.1.1 \
+            -app build/bin/go-calc.app -volname go-calc -out "$dmg" \
+            -python /tmp/dmgvenv/bin/python3
+          { echo "ASSET<<EOF"; echo "$asset"; echo "$dmg"; echo "EOF"; } >> "$GITHUB_ENV"
 
       - name: Attach to GitHub Release
         uses: softprops/action-gh-release@v2
@@ -102,7 +110,8 @@ jobs:
             `go-calc-${{ github.ref_name }}-windows-amd64.zip` — unzip and run **go-calc.exe**.
 
             ### 🍏 macOS (Apple Silicon / arm64)
-            `go-calc-${{ github.ref_name }}-macos-arm64.zip` — unzip, move **go-calc.app** to Applications.
+            `go-calc-${{ github.ref_name }}-macos-arm64.dmg` — open it and drag **go-calc** to **Applications**.
+            (The `.zip` with the same name is what the in-app updater consumes; as a download both work.)
             Not notarized: on first launch open **System Settings → Privacy & Security** and click
             **Open Anyway** (see the `README.txt` inside the zip). Or run `xattr -dr com.apple.quarantine go-calc.app`.
 
