@@ -7,6 +7,8 @@ export function AddAllowlistEntry(arg1:string):Promise<Array<string>>;
 
 export function Calculate(arg1:string):Promise<string>;
 
+export function CheckForUpdates():Promise<main.UpdateInfo>;
+
 export function GetAPIFingerprint():Promise<string>;
 
 export function GetAPIKey():Promise<string>;
@@ -19,7 +21,13 @@ export function GetAllowlist():Promise<Array<string>>;
 
 export function GetSettings():Promise<settings.Settings>;
 
+export function GetUpdateInfo():Promise<main.UpdateInfo>;
+
 export function GetVersion():Promise<string>;
+
+export function InstallUpdate():Promise<void>;
+
+export function RemindUpdateLater():Promise<void>;
 
 export function RemoveAllowlistEntry(arg1:string):Promise<Array<string>>;
 
@@ -33,7 +41,11 @@ export function SetOpacity(arg1:number):Promise<void>;
 
 export function SetTheme(arg1:string):Promise<void>;
 
+export function SetUpdateAutoCheck(arg1:boolean):Promise<void>;
+
 export function ShuffleAPIPort():Promise<main.APIStatus>;
+
+export function SkipUpdateVersion():Promise<void>;
 
 export function StartAPIServer():Promise<main.APIStatus>;
 

@@ -70,6 +70,17 @@ Accepts the UI glyphs too (`×`, `÷`, `−`) and `,` as a decimal separator.
 Arithmetic is exact. An unparseable or undefined expression (e.g. `1 / 0`)
 returns `422 calculation_error`.
 
+## Updates: `GET /v1/update`
+
+The in-app updater's snapshot: `{checking, installing, progress, available,
+version, notes, current, checkedAt, error, notify}`. `notify` is the badge
+rule (an update exists, not skipped, "Later" lapsed) — computed in Go so the
+UI and the API always agree. Drive the updater through the UI bridge:
+`update-check` (risk `external`) refreshes this snapshot; `update-install`
+(risk `destructive`) downloads, verifies against the release's
+`checksums.txt`, swaps the executable and **restarts the app — the API goes
+away mid-call**. `update-skip` and `update-later` silence the notice.
+
 ## Drive the real UI: `/v1/ui/*`
 
 These operate the actual frontend and return the resulting on-screen **state**

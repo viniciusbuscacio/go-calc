@@ -1,5 +1,17 @@
 <script setup lang="ts">
-import { ui, go, setTheme, setOpacity } from "../store";
+import { computed } from "vue";
+import {
+  ui,
+  update,
+  go,
+  setTheme,
+  setOpacity,
+  checkForUpdates,
+  installUpdate,
+  skipUpdate,
+  remindUpdateLater,
+  setUpdateAutoCheck,
+} from "../store";
 import { BrowserOpenURL } from "../../wailsjs/runtime/runtime";
 
 const GITHUB_URL = "https://github.com/viniciusbuscacio/go-calc";
@@ -16,6 +28,38 @@ function onOpacity(e: Event) {
 function openGitHub() {
   BrowserOpenURL(GITHUB_URL);
 }
+
+function onUpdateAutoCheck(e: Event) {
+  setUpdateAutoCheck((e.target as HTMLInputElement).checked);
+}
+
+// The result card shows when Go says to notify (badge rule) or right after a
+// manual check — so "Check now" always surfaces an available update, even one
+// that was skipped or snoozed before.
+const showUpdateCard = computed(() => update.available && (update.notify || update.seen));
+
+// One line summarizing the last check, mirrored under the Check button.
+const updateStatus = computed(() => {
+  if (update.checking) return "Checking…";
+  if (update.installing) return installLabel.value;
+  if (update.error) return update.error;
+  if (update.available) return `Version ${update.version} is available`;
+  if (update.checkedAt) return `You're up to date (${update.current})`;
+  return "";
+});
+
+const installLabel = computed(() => {
+  switch (update.progress) {
+    case "downloading":
+      return "Downloading…";
+    case "verifying":
+      return "Verifying…";
+    case "applying":
+      return "Restarting…";
+    default:
+      return update.installing ? "Installing…" : "Install and restart";
+  }
+});
 </script>
 
 <template>
@@ -78,6 +122,72 @@ function openGitHub() {
           <path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6Z" />
         </svg>
       </button>
+
+      <p class="section-title">Updates</p>
+      <label class="row switch-row">
+        <span class="row-text">
+          <span class="row-label">Check for updates automatically</span>
+          <span class="row-desc">Once a day, when the app starts</span>
+        </span>
+        <input
+          type="checkbox"
+          class="switch"
+          role="switch"
+          :checked="update.autoCheck"
+          data-testid="update-autocheck"
+          @change="onUpdateAutoCheck"
+        />
+      </label>
+
+      <div class="row">
+        <span class="row-text">
+          <span class="row-label">Check for updates</span>
+          <span class="row-desc" data-testid="update-status">{{ updateStatus }}</span>
+        </span>
+        <button
+          class="btn"
+          data-testid="update-check"
+          :disabled="update.checking || update.installing"
+          @click="checkForUpdates"
+        >
+          Check now
+        </button>
+      </div>
+
+      <div v-if="showUpdateCard" class="update-card">
+        <p class="update-card-title">Version {{ update.version }} is available</p>
+        <pre
+          v-if="update.notes"
+          class="update-notes"
+          data-testid="update-notes"
+        >{{ update.notes }}</pre>
+        <div class="update-actions">
+          <button
+            class="btn"
+            data-testid="update-install"
+            :disabled="update.installing"
+            @click="installUpdate"
+          >
+            {{ installLabel }}
+          </button>
+          <button
+            class="btn btn-ghost"
+            data-testid="update-skip"
+            :disabled="update.installing"
+            @click="skipUpdate"
+          >
+            Skip this version
+          </button>
+          <button
+            class="btn btn-ghost"
+            data-testid="update-later"
+            :disabled="update.installing"
+            @click="remindUpdateLater"
+          >
+            Later
+          </button>
+        </div>
+      </div>
 
       <p class="section-title">About</p>
       <div class="about">

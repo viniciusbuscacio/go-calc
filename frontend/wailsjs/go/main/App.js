@@ -10,6 +10,10 @@ export function Calculate(arg1) {
   return window['go']['main']['App']['Calculate'](arg1);
 }
 
+export function CheckForUpdates() {
+  return window['go']['main']['App']['CheckForUpdates']();
+}
+
 export function GetAPIFingerprint() {
   return window['go']['main']['App']['GetAPIFingerprint']();
 }
@@ -34,8 +38,20 @@ export function GetSettings() {
   return window['go']['main']['App']['GetSettings']();
 }
 
+export function GetUpdateInfo() {
+  return window['go']['main']['App']['GetUpdateInfo']();
+}
+
 export function GetVersion() {
   return window['go']['main']['App']['GetVersion']();
+}
+
+export function InstallUpdate() {
+  return window['go']['main']['App']['InstallUpdate']();
+}
+
+export function RemindUpdateLater() {
+  return window['go']['main']['App']['RemindUpdateLater']();
 }
 
 export function RemoveAllowlistEntry(arg1) {
@@ -62,8 +78,16 @@ export function SetTheme(arg1) {
   return window['go']['main']['App']['SetTheme'](arg1);
 }
 
+export function SetUpdateAutoCheck(arg1) {
+  return window['go']['main']['App']['SetUpdateAutoCheck'](arg1);
+}
+
 export function ShuffleAPIPort() {
   return window['go']['main']['App']['ShuffleAPIPort']();
+}
+
+export function SkipUpdateVersion() {
+  return window['go']['main']['App']['SkipUpdateVersion']();
 }
 
 export function StartAPIServer() {

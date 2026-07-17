@@ -11,6 +11,7 @@ import (
 	"github.com/viniciusbuscacio/go-calc/internal/apiserver"
 	"github.com/viniciusbuscacio/go-calc/internal/calc"
 	"github.com/viniciusbuscacio/go-calc/internal/settings"
+	"github.com/viniciusbuscacio/go-calc/internal/updater"
 )
 
 // API port range the shuffle button picks from.
@@ -32,12 +33,17 @@ type App struct {
 	cfg    settings.Settings
 	server *apiserver.Server
 	ui     *uiBridge
+	// In-app updater state (see update.go): the last check's snapshot and the
+	// release it found, kept so Install doesn't need to re-check.
+	updState   UpdateInfo
+	updRelease *updater.Release
 }
 
 func NewApp() *App {
 	a := &App{}
 	a.ui = newUIBridge(a)
 	a.server = apiserver.New(calc.Evaluate, a.appInfo, a.ui)
+	a.server.HandleExtra("/v1/update", a.handleUpdate)
 	return a
 }
 
@@ -54,6 +60,10 @@ func (a *App) startup(ctx context.Context) {
 	a.cfg = cfg
 	a.mu.Unlock()
 	go fixTaskbarIcon(appTitle)
+	// Sweep the ".old" binary a previous self-update parked, then — if the
+	// user opted in — check for a newer release in the background.
+	a.updateClient().CleanupOld()
+	go a.maybeAutoCheck()
 	if cfg.APIAutoStart {
 		_ = a.startServer()
 	}

@@ -47,6 +47,7 @@ type Server struct {
 	calc    CalcFunc
 	info    InfoFunc
 	ui      UIController
+	extra   map[string]http.HandlerFunc // app-specific endpoints, behind the same auth
 	httpSrv *http.Server
 	cfg     Config
 	running bool
@@ -57,6 +58,18 @@ type Server struct {
 
 func New(calc CalcFunc, info InfoFunc, ui UIController) *Server {
 	return &Server{calc: calc, info: info, ui: ui}
+}
+
+// HandleExtra registers an app-specific endpoint (e.g. "/v1/update") served
+// behind the same key + allowlist middleware as the built-in routes. Register
+// before Start; a running server picks it up on its next (re)start.
+func (s *Server) HandleExtra(path string, h http.HandlerFunc) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.extra == nil {
+		s.extra = map[string]http.HandlerFunc{}
+	}
+	s.extra[path] = h
 }
 
 func (s *Server) Running() bool {
@@ -136,6 +149,9 @@ func (s *Server) Start(cfg Config) error {
 	mux.HandleFunc("/v1/ui/press", s.handleUIPress)
 	mux.HandleFunc("/v1/ui/key", s.handleUIKey)
 	mux.HandleFunc("/v1/ui/input", s.handleUIInput)
+	for path, h := range s.extra {
+		mux.HandleFunc(path, h)
+	}
 
 	handler := withAllowlist(nets, withKey(cfg.Key, mux))
 
@@ -485,6 +501,15 @@ func OutboundIP() string {
 	}
 	defer conn.Close()
 	return conn.LocalAddr().(*net.UDPAddr).IP.String()
+}
+
+// WriteJSON / WriteErr are the exported faces of the helpers below, so extra
+// endpoints registered via HandleExtra answer in the same shapes (including
+// the structured {"error":{code,message,status}} contract).
+func WriteJSON(w http.ResponseWriter, code int, v any) { writeJSON(w, code, v) }
+
+func WriteErr(w http.ResponseWriter, status int, code, msg string) {
+	writeErr(w, status, code, msg)
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {
