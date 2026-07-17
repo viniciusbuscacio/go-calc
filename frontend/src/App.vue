@@ -8,9 +8,11 @@ import {
 } from "../wailsjs/runtime/runtime";
 import { ui, update, go, loadSettings } from "./store";
 import { initUIBridge } from "./uibridge";
+import { InstallerState } from "../wailsjs/go/main/App";
 import CalculatorView from "./views/CalculatorView.vue";
 import OptionsView from "./views/OptionsView.vue";
 import ApiServerView from "./views/ApiServerView.vue";
+import InstallerView from "./views/InstallerView.vue";
 
 onMounted(async () => {
   // Apply persisted theme/opacity BEFORE the window is shown, then reveal it
@@ -18,6 +20,10 @@ onMounted(async () => {
   // user never sees the default-theme flash / repaint flicker on Linux.
   await loadSettings();
   initUIBridge();
+  // A non-empty installer mode (Windows: wizard or the Apps & Features
+  // uninstall) replaces the whole app with the installer view.
+  const inst = await InstallerState();
+  if (inst.mode) ui.view = "installer";
   // Wait for Vue to flush the DOM with the correct theme/opacity, then reveal
   // the window. We must NOT use requestAnimationFrame here: WebKitGTK pauses
   // rAF callbacks while the window is hidden (StartHidden), so it would never
@@ -60,6 +66,7 @@ onMounted(async () => {
 
       <div class="win-controls" style="--wails-draggable: no-drag">
         <button
+          v-if="ui.view !== 'installer'"
           class="win-btn"
           :title="update.notify ? 'Settings — update available' : 'Settings'"
           data-testid="open-settings"
@@ -79,6 +86,7 @@ onMounted(async () => {
           &#x2013;
         </button>
         <button
+          v-if="ui.view !== 'installer'"
           class="win-btn"
           title="Maximize"
           data-testid="window-maximize"
@@ -102,5 +110,6 @@ onMounted(async () => {
     <CalculatorView v-if="ui.view === 'calc'" />
     <OptionsView v-else-if="ui.view === 'options'" />
     <ApiServerView v-else-if="ui.view === 'api'" />
+    <InstallerView v-else-if="ui.view === 'installer'" />
   </div>
 </template>

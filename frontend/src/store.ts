@@ -13,7 +13,7 @@ import {
 } from "../wailsjs/go/main/App";
 import { EventsOn } from "../wailsjs/runtime/runtime";
 
-export type View = "calc" | "options" | "api";
+export type View = "calc" | "options" | "api" | "installer";
 
 // Minimal shared UI state. A single reactive object is enough of a "router"
 // for a small single-window app and reuses cleanly across the framework.

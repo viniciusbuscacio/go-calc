@@ -39,6 +39,11 @@ type App struct {
 	// release it found, kept so Install doesn't need to re-check.
 	updState   UpdateInfo
 	updRelease *updater.Release
+	// Install wizard state (install_windows.go): the mode decided at boot
+	// and the wizard's choices along the way.
+	instMode string // "" | "wizard" | "uninstall"
+	instDir  string // custom destination ("" = default)
+	instExe  string // installed exe path, once InstallerInstall ran
 }
 
 func NewApp() *App {

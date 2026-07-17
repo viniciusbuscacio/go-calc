@@ -22,14 +22,29 @@ var appIcon []byte
 const appTitle = "go-Calc"
 
 func main() {
+	// When this process is the uninstaller's %TEMP% helper copy, do the
+	// removal and exit before any UI machinery starts.
+	if installerCleanup() {
+		return
+	}
+
 	app := NewApp()
+	app.instMode = installerMode()
+
+	// The calculator is a tall narrow window; the wizard is a landscape one.
+	width, height, minWidth, minHeight := 380, 640, 360, 640
+	title := appTitle
+	if app.instMode != "" {
+		width, height, minWidth, minHeight = 600, 500, 600, 500
+		title = appTitle + " Setup"
+	}
 
 	err := wails.Run(&options.App{
-		Title:     appTitle,
-		Width:     380,
-		Height:    640,
-		MinWidth:  360,
-		MinHeight: 640, // fits the tallest view (REST API) without a scrollbar
+		Title:     title,
+		Width:     width,
+		Height:    height,
+		MinWidth:  minWidth,
+		MinHeight: minHeight, // calc: fits the tallest view (REST API) without a scrollbar
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

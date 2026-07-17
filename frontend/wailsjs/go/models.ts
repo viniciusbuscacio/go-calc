@@ -20,6 +20,26 @@ export namespace main {
 	        this.fingerprint = source["fingerprint"];
 	    }
 	}
+	export class InstallerState {
+	    mode: string;
+	    dir: string;
+	    version: string;
+	    url: string;
+	    license: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new InstallerState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.mode = source["mode"];
+	        this.dir = source["dir"];
+	        this.version = source["version"];
+	        this.url = source["url"];
+	        this.license = source["license"];
+	    }
+	}
 	export class UpdateInfo {
 	    checking: boolean;
 	    installing: boolean;
@@ -63,6 +83,7 @@ export namespace settings {
 	    apiKey: string;
 	    apiAllowlist: string[];
 	    apiHttps: boolean;
+	    portableMode: boolean;
 	    updateAutoCheck: boolean;
 	    updateSkippedVersion: string;
 	    updateLaterUntil: string;
@@ -81,6 +102,7 @@ export namespace settings {
 	        this.apiKey = source["apiKey"];
 	        this.apiAllowlist = source["apiAllowlist"];
 	        this.apiHttps = source["apiHttps"];
+	        this.portableMode = source["portableMode"];
 	        this.updateAutoCheck = source["updateAutoCheck"];
 	        this.updateSkippedVersion = source["updateSkippedVersion"];
 	        this.updateLaterUntil = source["updateLaterUntil"];

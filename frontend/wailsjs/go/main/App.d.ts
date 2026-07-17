@@ -27,6 +27,18 @@ export function GetVersion():Promise<string>;
 
 export function InstallUpdate():Promise<void>;
 
+export function InstallerChooseDir():Promise<string>;
+
+export function InstallerFinish(arg1:boolean,arg2:boolean,arg3:boolean):Promise<string>;
+
+export function InstallerInstall():Promise<string>;
+
+export function InstallerPortable():Promise<void>;
+
+export function InstallerState():Promise<main.InstallerState>;
+
+export function InstallerUninstall():Promise<string>;
+
 export function RemindUpdateLater():Promise<void>;
 
 export function RemoveAllowlistEntry(arg1:string):Promise<Array<string>>;
