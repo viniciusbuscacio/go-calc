@@ -147,6 +147,7 @@ func (a *App) appInfo() any {
 			{Method: "GET", Path: "/v1/update", Returns: "last update-check snapshot: {checking, installing, available, version, notes, current, checkedAt, error, notify}", Auth: "X-API-Key header"},
 			{Method: "GET", Path: "/v1/ui/state", Returns: "current on-screen state", Auth: "X-API-Key header"},
 			{Method: "POST", Path: "/v1/ui/press", Body: map[string]string{"testid": "key-7"}, Returns: "resulting on-screen state", Auth: "X-API-Key header"},
+			{Method: "POST", Path: "/v1/ui/dblclick", Body: map[string]string{"testid": "display"}, Returns: "resulting on-screen state", Auth: "X-API-Key header"},
 			{Method: "POST", Path: "/v1/ui/key", Body: map[string]string{"key": "Enter"}, Returns: "resulting on-screen state", Auth: "X-API-Key header"},
 			{Method: "POST", Path: "/v1/ui/input", Body: map[string]string{"testid": "new-ip", "value": "10.0.0.0/24"}, Returns: "resulting on-screen state", Auth: "X-API-Key header"},
 		},

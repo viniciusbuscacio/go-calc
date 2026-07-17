@@ -10,7 +10,7 @@ import { ui } from "./store";
 
 interface UICommand {
   id: string;
-  type: "state" | "press" | "key" | "input";
+  type: "state" | "press" | "dblclick" | "key" | "input";
   testid?: string;
   key?: string;
   value?: string;
@@ -101,6 +101,23 @@ async function perform(cmd: UICommand): Promise<UIError | undefined> {
       error = { code: "disabled_control", message: `control is disabled: ${cmd.testid}` };
     } else {
       node.click();
+    }
+  } else if (cmd.type === "dblclick") {
+    const node = cmd.testid ? el(cmd.testid) : null;
+    if (!node) {
+      error = { code: "unknown_testid", message: `unknown testid: ${cmd.testid}` };
+    } else if (isDisabled(node)) {
+      error = { code: "disabled_control", message: `control is disabled: ${cmd.testid}` };
+    } else {
+      // Reproduce a real double-click end to end: mousedown/up + click for each
+      // of the two presses, then a dblclick, so handlers of every style react
+      // exactly as they would to a physical double-click.
+      for (const detail of [1, 2]) {
+        node.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, detail }));
+        node.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, detail }));
+        node.dispatchEvent(new MouseEvent("click", { bubbles: true, detail }));
+      }
+      node.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, detail: 2 }));
     }
   } else if (cmd.type === "key" && cmd.key) {
     window.dispatchEvent(

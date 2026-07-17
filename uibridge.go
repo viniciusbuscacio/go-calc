@@ -26,7 +26,7 @@ type uiBridge struct {
 
 type uiCommand struct {
 	ID     string `json:"id"`
-	Type   string `json:"type"` // "state" | "press" | "key" | "input"
+	Type   string `json:"type"` // "state" | "press" | "dblclick" | "key" | "input"
 	Testid string `json:"testid,omitempty"`
 	Key    string `json:"key,omitempty"`
 	Value  string `json:"value,omitempty"`
@@ -84,6 +84,10 @@ func (b *uiBridge) State() (any, error) {
 
 func (b *uiBridge) Press(testid string) (any, error) {
 	return b.dispatch(uiCommand{Type: "press", Testid: testid})
+}
+
+func (b *uiBridge) DblClick(testid string) (any, error) {
+	return b.dispatch(uiCommand{Type: "dblclick", Testid: testid})
 }
 
 func (b *uiBridge) Key(key string) (any, error) {

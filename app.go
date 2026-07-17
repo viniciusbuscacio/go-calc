@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"net"
+	"net/http"
+	"strings"
 	"sync"
 
-	"github.com/viniciusbuscacio/go-calc/internal/apiserver"
+	apiserver "github.com/viniciusbuscacio/go-apiserver"
 	"github.com/viniciusbuscacio/go-calc/internal/calc"
 	"github.com/viniciusbuscacio/go-calc/internal/settings"
 	updater "github.com/viniciusbuscacio/go-updates"
@@ -42,9 +44,32 @@ type App struct {
 func NewApp() *App {
 	a := &App{}
 	a.ui = newUIBridge(a)
-	a.server = apiserver.New(calc.Evaluate, a.appInfo, a.ui)
+	a.server = apiserver.New(a.appInfo, a.ui)
+	a.server.HandleExtra("/v1/calc", a.handleCalc)
 	a.server.HandleExtra("/v1/update", a.handleUpdate)
 	return a
+}
+
+// handleCalc is the app's domain endpoint (POST /v1/calc): evaluate a full
+// arithmetic expression and return {"result": "..."} — the same engine behind
+// the '=' key, without touching the screen.
+func (a *App) handleCalc(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Expression string `json:"expression"`
+	}
+	if !apiserver.DecodeJSON(w, r, &req) {
+		return
+	}
+	if strings.TrimSpace(req.Expression) == "" {
+		apiserver.WriteErr(w, http.StatusBadRequest, "missing_field", "field 'expression' is required")
+		return
+	}
+	result, err := calc.Evaluate(req.Expression)
+	if err != nil {
+		apiserver.WriteErr(w, http.StatusUnprocessableEntity, "calculation_error", err.Error())
+		return
+	}
+	apiserver.WriteJSON(w, http.StatusOK, map[string]string{"result": result})
 }
 
 // UIAck is called by the frontend to report the resulting screen state after
@@ -162,6 +187,7 @@ func (a *App) startServer() error {
 		Allowlist: cfg.APIAllowlist,
 		TLS:       cfg.APIHTTPS,
 		CertDir:   dir,
+		AppName:   "go-calc",
 	})
 }
 
