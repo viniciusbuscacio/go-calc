@@ -11,7 +11,7 @@ import (
 	"github.com/viniciusbuscacio/go-calc/internal/apiserver"
 	"github.com/viniciusbuscacio/go-calc/internal/calc"
 	"github.com/viniciusbuscacio/go-calc/internal/settings"
-	"github.com/viniciusbuscacio/go-calc/internal/updater"
+	updater "github.com/viniciusbuscacio/go-updates"
 )
 
 // API port range the shuffle button picks from.

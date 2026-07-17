@@ -1,10 +1,11 @@
 package main
 
-// The in-app updater's thin Wails adapter. All real work lives in
-// internal/updater; this file owns the app-side state machine (last check
-// result, notify rules, install progress) and pushes every change to the
-// frontend as an "update:state" event, so the UI and GET /v1/update always
-// agree. Ported from go-notepad (docs/updater-design.md over there).
+// The in-app updater's thin Wails adapter. All real work lives in the shared
+// github.com/viniciusbuscacio/go-updates library; this file owns the app-side
+// state machine (last check result, notify rules, install progress) and pushes
+// every change to the frontend as an "update:state" event, so the UI and
+// GET /v1/update always agree. Ported from go-notepad (docs/updater-design.md
+// over there).
 
 import (
 	"fmt"
@@ -14,7 +15,7 @@ import (
 
 	"github.com/viniciusbuscacio/go-calc/internal/apiserver"
 	"github.com/viniciusbuscacio/go-calc/internal/settings"
-	"github.com/viniciusbuscacio/go-calc/internal/updater"
+	updater "github.com/viniciusbuscacio/go-updates"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
