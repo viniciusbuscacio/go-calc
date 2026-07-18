@@ -47,35 +47,32 @@ lives in Go.**
 
 # Download
 
-Grab a prebuilt binary from the [**Releases**](https://github.com/viniciusbuscacio/go-calc/releases/latest) page.
-Each release provides one download per platform:
+One installer per platform, from the [**Releases**](https://github.com/viniciusbuscacio/go-calc/releases/latest) page:
 
-### 🪟 Windows (x64)
+| Platform | Download | Then |
+|---|---|---|
+| 🪟 Windows (x64) | **`go-calc-vX.Y.Z-windows-amd64-setup.exe`** | Run it — next → next → finish. Run it again anytime to reinstall or uninstall. |
+| 🍏 macOS (Apple Silicon) | **`go-calc-vX.Y.Z-macos-arm64.dmg`** | Open it and drag **go-Calc** to **Applications** (then see the first-launch note below). |
+| 🐧 Linux (x64) | **`go-calc-vX.Y.Z-linux-amd64.tar.gz`** | Extract, then `./scripts/install-linux.sh` — dock icon and app-grid entry, under `~/.local`, no root. |
 
-- Download **`go-calc-vX.Y.Z-windows-amd64.zip`**
-- Unzip and run **`go-calc.exe`**.
+<details>
+<summary><b>Notes</b> — portable Windows zip · macOS first launch · Linux dependency</summary>
 
-### 🍏 macOS (Apple Silicon / arm64)
-
-- Download **`go-calc-vX.Y.Z-macos-arm64.zip`** and unzip it.
-- The app is **not notarized**, so macOS blocks it with *"Apple could not verify go-Calc is
-  free of malware."* Run this once in Terminal, then open the app normally:
+- **Windows without installing:** the `...-windows-amd64.zip` contains a portable
+  `go-calc.exe` — unzip and run, no installation.
+- **macOS first launch:** the app is **not notarized**, so macOS blocks it with
+  *"Apple could not verify go-Calc is free of malware."* Run this once in
+  Terminal, then open it normally:
   ```bash
-  xattr -dr com.apple.quarantine ~/Downloads/go-calc-vX.Y.Z-macos-arm64/go-calc.app
+  xattr -dr com.apple.quarantine /Applications/go-calc.app
   ```
-  (On recent macOS the *System Settings → Privacy & Security → Open Anyway* button often
-  doesn't work for un-notarized apps — the command above is the reliable fix.)
-- The downloaded `.zip` also contains a `README.txt` with this step.
+  (The *Privacy & Security → Open Anyway* button often doesn't work for
+  un-notarized apps — the command above is the reliable fix. A `README.txt`
+  inside the DMG carries this same step.)
+- **Linux runtime dependency:** WebKitGTK 4.1 —
+  `sudo apt install libwebkit2gtk-4.1-0` (Debian/Ubuntu/Zorin).
 
-### 🐧 Linux (x64)
-
-- Download **`go-calc-vX.Y.Z-linux-amd64.tar.gz`**
-- Extract it, then install (adds the dock icon and app-grid entry under `~/.local`):
-  ```bash
-  tar -xzf go-calc-vX.Y.Z-linux-amd64.tar.gz
-  cd go-calc && ./scripts/install-linux.sh
-  ```
-- Requires WebKitGTK 4.1 at runtime: `sudo apt install libwebkit2gtk-4.1-0` (Debian/Ubuntu/Zorin).
+</details>
 
 Or build it yourself — see [Development](#development).
 
