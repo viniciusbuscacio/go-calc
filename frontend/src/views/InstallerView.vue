@@ -6,26 +6,30 @@ import {
   InstallerChooseDir,
   InstallerInstall,
   InstallerFinish,
-  InstallerPortable,
   InstallerUninstall,
 } from "../../wailsjs/go/main/App";
-import { ui, go, setTheme } from "../store";
+import { ui, setTheme } from "../store";
 
 // The wizard: welcome → license → destination → installing → done. The
-// uninstall confirmation is its own single screen (state.mode). Mechanics
-// live in Go (install_windows.go + the go-installer library); this view
-// only walks the steps.
+// Reinstall/Uninstall maintenance screen (setup run with the app already
+// installed) and the uninstall confirmation are their own single screens
+// (state.mode). Mechanics live in Go (install_windows.go + the
+// go-installer library); this view only walks the steps.
 type Step = "welcome" | "license" | "destination" | "installing" | "done";
 
 const state = reactive({
   mode: "",
   dir: "",
   version: "",
+  installedVersion: "",
   url: "",
   license: "",
   step: "welcome" as Step,
   error: "",
   busy: false,
+  // Uninstall reached from the maintenance screen: Cancel goes back to it
+  // instead of quitting the setup.
+  fromMaintenance: false,
   // Final-screen choices (Q8: the user picks where shortcuts go, at the end).
   startMenu: true,
   desktop: false,
@@ -37,6 +41,7 @@ onMounted(async () => {
   state.mode = s.mode;
   state.dir = s.dir;
   state.version = s.version;
+  state.installedVersion = s.installedVersion;
   state.url = s.url;
   state.license = s.license;
 });
@@ -74,9 +79,24 @@ async function finish() {
   if (err) state.error = err;
 }
 
-async function runPortable() {
-  await InstallerPortable();
-  go("calc");
+// Reinstall (maintenance screen): straight to the copy, into the same
+// folder the app is already installed in — no destination step.
+function reinstall() {
+  state.mode = "";
+  install();
+}
+
+function askUninstall() {
+  state.fromMaintenance = true;
+  state.mode = "uninstall";
+}
+
+function cancelUninstall() {
+  if (state.fromMaintenance) {
+    state.mode = "maintenance";
+    return;
+  }
+  Quit();
 }
 
 async function uninstall() {
@@ -106,7 +126,7 @@ function toggleTheme() {
         </p>
       </div>
       <footer class="wizard-footer">
-        <button class="btn btn-ghost" data-testid="uninstall-cancel" @click="Quit">
+        <button class="btn btn-ghost" data-testid="uninstall-cancel" @click="cancelUninstall">
           Cancel
         </button>
         <span class="wizard-spacer" />
@@ -117,6 +137,35 @@ function toggleTheme() {
           @click="uninstall"
         >
           Uninstall
+        </button>
+      </footer>
+    </template>
+
+    <!-- ===== Maintenance: setup run with the app already installed ===== -->
+    <template v-else-if="state.mode === 'maintenance'">
+      <div class="wizard-body">
+        <h1 class="wizard-title">go-Calc is already installed</h1>
+        <p class="wizard-text">
+          Version {{ state.installedVersion || "?" }} is installed in:
+        </p>
+        <div class="wizard-path-row">
+          <code class="wizard-path" data-testid="installer-dir">{{ state.dir }}</code>
+        </div>
+        <p class="wizard-text wizard-muted" style="margin-top: 10px">
+          Reinstall version {{ state.version }} over it, or uninstall.
+        </p>
+        <p v-if="state.error" class="wizard-error" data-testid="installer-error">
+          {{ state.error }}
+        </p>
+      </div>
+      <footer class="wizard-footer">
+        <button class="btn btn-danger" data-testid="maintenance-uninstall" @click="askUninstall">
+          Uninstall
+        </button>
+        <span class="wizard-spacer" />
+        <button class="btn btn-ghost" @click="Quit">Cancel</button>
+        <button class="btn" data-testid="maintenance-reinstall" @click="reinstall">
+          Reinstall
         </button>
       </footer>
     </template>
@@ -221,14 +270,6 @@ function toggleTheme() {
             <path d="M2 12h2" /><path d="M20 12h2" />
             <path d="m6.3 17.7-1.4 1.4" /><path d="m19.1 4.9-1.4 1.4" />
           </svg>
-        </button>
-        <button
-          v-if="state.step === 'welcome'"
-          class="btn btn-ghost"
-          data-testid="installer-portable"
-          @click="runPortable"
-        >
-          Run without installing
         </button>
         <span class="wizard-spacer" />
         <template v-if="state.step === 'welcome'">

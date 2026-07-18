@@ -62,10 +62,6 @@ export function InstallerInstall() {
   return window['go']['main']['App']['InstallerInstall']();
 }
 
-export function InstallerPortable() {
-  return window['go']['main']['App']['InstallerPortable']();
-}
-
 export function InstallerState() {
   return window['go']['main']['App']['InstallerState']();
 }

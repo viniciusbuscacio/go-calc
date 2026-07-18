@@ -20,11 +20,6 @@ type Settings struct {
 	APIAllowlist []string `json:"apiAllowlist"` // CIDRs, e.g. "127.0.0.1/32"
 	APIHTTPS     bool     `json:"apiHttps"`     // serve HTTPS instead of HTTP
 
-	// PortableMode records the wizard's "Run without installing" choice on
-	// Windows, so the wizard stops appearing on later launches of a
-	// non-installed exe. Meaningless (and never set) on other OSes.
-	PortableMode bool `json:"portableMode"`
-
 	// In-app updater. AutoCheck is opt-in: the app makes no network call the
 	// user didn't ask for. Timestamps are RFC3339; empty means "never"/"unset".
 	UpdateAutoCheck  bool   `json:"updateAutoCheck"`      // check GitHub once a day on launch

@@ -33,8 +33,6 @@ export function InstallerFinish(arg1:boolean,arg2:boolean,arg3:boolean):Promise<
 
 export function InstallerInstall():Promise<string>;
 
-export function InstallerPortable():Promise<void>;
-
 export function InstallerState():Promise<main.InstallerState>;
 
 export function InstallerUninstall():Promise<string>;

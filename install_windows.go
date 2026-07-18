@@ -33,17 +33,23 @@ func calcInstaller(dir string) installer.App {
 // is the uninstall helper copy; true means exit before any UI starts.
 func installerCleanup() bool { return installer.MaybeCleanup() }
 
-// installerMode decides what this launch is, before the window exists:
-// the Apps & Features uninstall, a normal run (installed copy or the user
-// chose portable), or the wizard.
-func installerMode() string {
+// installerBoot decides what this launch is, before the window exists:
+// the Apps & Features uninstall, a normal run (installed copy, or a plain
+// non-setup exe — always portable), the wizard, or — setup run with the
+// app already installed — the Reinstall/Uninstall maintenance screen,
+// whose dir is the existing install so Reinstall lands in the same place.
+func installerBoot() (mode, dir string) {
 	if installer.UninstallRequested() {
-		return "uninstall"
+		return "uninstall", ""
 	}
-	if calcInstaller("").Installed() || settings.Load().PortableMode {
-		return ""
+	app := calcInstaller("")
+	if app.Installed() || !installer.RunningAsSetup() {
+		return "", ""
 	}
-	return "wizard"
+	if loc, _, ok := app.InstalledInfo(); ok {
+		return "maintenance", loc
+	}
+	return "wizard", ""
 }
 
 func (a *App) InstallerState() InstallerState {
@@ -55,12 +61,17 @@ func (a *App) InstallerState() InstallerState {
 			dir = d
 		}
 	}
+	instVer := ""
+	if mode == "maintenance" {
+		_, instVer, _ = calcInstaller("").InstalledInfo()
+	}
 	return InstallerState{
-		Mode:    mode,
-		Dir:     dir,
-		Version: strings.TrimPrefix(appVersion, "v"),
-		URL:     projectURL,
-		License: licenseText,
+		Mode:             mode,
+		Dir:              dir,
+		Version:          strings.TrimPrefix(appVersion, "v"),
+		InstalledVersion: instVer,
+		URL:              projectURL,
+		License:          licenseText,
 	}
 }
 
@@ -120,18 +131,6 @@ func (a *App) InstallerFinish(startMenu, desktop, launch bool) string {
 	}
 	wruntime.Quit(a.ctx)
 	return ""
-}
-
-// InstallerPortable is the wizard's "Run without installing": remember the
-// choice so the wizard stops appearing, and let the frontend switch to the
-// normal app in place.
-func (a *App) InstallerPortable() {
-	a.mu.Lock()
-	a.cfg.PortableMode = true
-	a.instMode = ""
-	cfg := a.cfg
-	a.mu.Unlock()
-	_ = settings.Save(cfg)
 }
 
 // InstallerUninstall runs the full removal (shortcuts, registry, data, the

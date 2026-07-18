@@ -41,8 +41,8 @@ type App struct {
 	updRelease *updater.Release
 	// Install wizard state (install_windows.go): the mode decided at boot
 	// and the wizard's choices along the way.
-	instMode string // "" | "wizard" | "uninstall"
-	instDir  string // custom destination ("" = default)
+	instMode string // "" | "wizard" | "maintenance" | "uninstall"
+	instDir  string // custom destination ("" = default; maintenance: the existing install)
 	instExe  string // installed exe path, once InstallerInstall ran
 }
 

@@ -24,6 +24,7 @@ export namespace main {
 	    mode: string;
 	    dir: string;
 	    version: string;
+	    installedVersion: string;
 	    url: string;
 	    license: string;
 	
@@ -36,6 +37,7 @@ export namespace main {
 	        this.mode = source["mode"];
 	        this.dir = source["dir"];
 	        this.version = source["version"];
+	        this.installedVersion = source["installedVersion"];
 	        this.url = source["url"];
 	        this.license = source["license"];
 	    }
@@ -83,7 +85,6 @@ export namespace settings {
 	    apiKey: string;
 	    apiAllowlist: string[];
 	    apiHttps: boolean;
-	    portableMode: boolean;
 	    updateAutoCheck: boolean;
 	    updateSkippedVersion: string;
 	    updateLaterUntil: string;
@@ -102,7 +103,6 @@ export namespace settings {
 	        this.apiKey = source["apiKey"];
 	        this.apiAllowlist = source["apiAllowlist"];
 	        this.apiHttps = source["apiHttps"];
-	        this.portableMode = source["portableMode"];
 	        this.updateAutoCheck = source["updateAutoCheck"];
 	        this.updateSkippedVersion = source["updateSkippedVersion"];
 	        this.updateLaterUntil = source["updateLaterUntil"];

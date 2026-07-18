@@ -8,7 +8,7 @@ package main
 
 func installerCleanup() bool { return false }
 
-func installerMode() string { return "" }
+func installerBoot() (mode, dir string) { return "", "" }
 
 func (a *App) InstallerState() InstallerState { return InstallerState{} }
 
@@ -19,7 +19,5 @@ func (a *App) InstallerInstall() string { return "not supported on this OS" }
 func (a *App) InstallerFinish(startMenu, desktop, launch bool) string {
 	return "not supported on this OS"
 }
-
-func (a *App) InstallerPortable() {}
 
 func (a *App) InstallerUninstall() string { return "not supported on this OS" }

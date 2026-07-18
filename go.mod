@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/viniciusbuscacio/go-apiserver v0.1.0
-	github.com/viniciusbuscacio/go-installer v0.1.3-0.20260717173118-297909543b97
+	github.com/viniciusbuscacio/go-installer v0.3.0
 	github.com/viniciusbuscacio/go-updates v0.1.0
 	github.com/wailsapp/wails/v2 v2.12.0
 )

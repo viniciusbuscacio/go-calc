@@ -29,7 +29,7 @@ func main() {
 	}
 
 	app := NewApp()
-	app.instMode = installerMode()
+	app.instMode, app.instDir = installerBoot()
 
 	// The calculator is a tall narrow window; the wizard is a landscape one.
 	width, height, minWidth, minHeight := 380, 640, 360, 640
