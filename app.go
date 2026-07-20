@@ -14,6 +14,7 @@ import (
 	"github.com/viniciusbuscacio/go-calc/internal/calc"
 	"github.com/viniciusbuscacio/go-calc/internal/settings"
 	updater "github.com/viniciusbuscacio/go-updates"
+	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // API port range the shuffle button picks from.
@@ -97,6 +98,9 @@ func (a *App) startup(ctx context.Context) {
 	if cfg.APIAutoStart {
 		_ = a.startServer()
 	}
+	// Tell the frontend the boot-time server state (auto-start or not) — it
+	// drives the titlebar API indicator.
+	a.emitAPIState()
 }
 
 // Calculate evaluates a full arithmetic expression.
@@ -180,6 +184,14 @@ func (a *App) status() APIStatus {
 	}
 }
 
+// emitAPIState pushes the live server status to the frontend ("api:state"),
+// so passive UI like the titlebar indicator stays honest without polling.
+func (a *App) emitAPIState() {
+	if a.ctx != nil {
+		wruntime.EventsEmit(a.ctx, "api:state", a.status())
+	}
+}
+
 func (a *App) startServer() error {
 	dir, err := settings.ConfigDir()
 	if err != nil {
@@ -201,6 +213,7 @@ func (a *App) startServer() error {
 // surface a server that failed to come back up instead of silently showing it
 // as running.
 func (a *App) applyIfRunning() error {
+	defer a.emitAPIState()
 	if !a.server.Running() {
 		return nil
 	}
@@ -211,17 +224,15 @@ func (a *App) applyIfRunning() error {
 }
 
 func (a *App) StartAPIServer() (APIStatus, error) {
-	if err := a.startServer(); err != nil {
-		return a.status(), err
-	}
-	return a.status(), nil
+	err := a.startServer()
+	a.emitAPIState()
+	return a.status(), err
 }
 
 func (a *App) StopAPIServer() (APIStatus, error) {
-	if err := a.server.Stop(); err != nil {
-		return a.status(), err
-	}
-	return a.status(), nil
+	err := a.server.Stop()
+	a.emitAPIState()
+	return a.status(), err
 }
 
 func (a *App) GetAPIStatus() APIStatus {

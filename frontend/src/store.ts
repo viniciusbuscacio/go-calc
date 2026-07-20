@@ -2,6 +2,7 @@ import { reactive } from "vue";
 import {
   GetSettings,
   GetVersion,
+  GetAPIStatus,
   SetTheme,
   SetOpacity,
   GetUpdateInfo,
@@ -29,6 +30,14 @@ export const ui = reactive({
   // panel's mount) keeps the version element present the moment the panel
   // renders, so a UI-state snapshot never races the fetch.
   version: "",
+});
+
+// Live REST server status, mirrored from Go (api:state event). Drives the
+// titlebar indicator: a green dot only while a port is actually open.
+export const api = reactive({
+  running: false,
+  port: 0,
+  url: "",
 });
 
 export function go(view: View) {
@@ -80,6 +89,12 @@ export async function loadSettings() {
     applyUpdateState(await GetUpdateInfo());
   } catch {
     /* updater state stays at its defaults */
+  }
+  try {
+    EventsOn("api:state", (s: object) => Object.assign(api, s));
+    Object.assign(api, await GetAPIStatus());
+  } catch {
+    /* indicator stays hidden if the backend isn't reachable */
   }
 }
 
