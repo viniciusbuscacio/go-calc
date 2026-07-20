@@ -206,7 +206,7 @@ func (a *App) appInfo() any {
 						{Role: "button", Name: "Start/Stop", Testid: "toggle-server", Action: "start or stop the REST server", Risk: riskSensitive},
 						{Role: "status", Name: "Server status", Testid: "status", Description: "shows Running or Stopped"},
 						{Role: "text", Name: "Server error", Testid: "server-error", Description: "why the last server operation failed; rendered only after a failure"},
-						{Role: "button", Name: "Shuffle port", Testid: "shuffle-port", Action: "pick a random free port (8700-8799) and restart the server if running", Risk: riskSensitive},
+						{Role: "button", Name: "Shuffle port", Testid: "shuffle-port", Action: "pick a random free port (8000-8999) and restart the server if running", Risk: riskSensitive},
 						{Role: "switch", Name: "Start automatically", Testid: "autostart", Action: "toggle starting the server on app launch", Risk: riskSensitive},
 						{Role: "switch", Name: "Use HTTPS", Testid: "use-https", Action: "toggle HTTPS (self-signed) vs plain HTTP; restarts the server if running", Risk: riskSensitive},
 						{Role: "table", Name: "Allowed IPs", Testid: "allowlist", Description: "CIDR allowlist controlling who may call the API"},

@@ -144,17 +144,17 @@ from there:
 
 ```bash
 # 1. learn the app (start here)
-curl -H "X-API-Key: YOUR_KEY" http://127.0.0.1:8737/v1/ax
+curl -H "X-API-Key: YOUR_KEY" http://127.0.0.1:PORT/v1/ax
 
 # 2. compute directly
-curl -X POST http://127.0.0.1:8737/v1/calc \
+curl -X POST http://127.0.0.1:PORT/v1/calc \
   -H "X-API-Key: YOUR_KEY" -d '{"expression":"200 * 50%"}'   # {"result":"100"}
 
 # 3. ...or drive the real UI: press 7 × 6 = and read the display back
-curl -X POST http://127.0.0.1:8737/v1/ui/press -H "X-API-Key: YOUR_KEY" -d '{"testid":"key-7"}'
-curl -X POST http://127.0.0.1:8737/v1/ui/key   -H "X-API-Key: YOUR_KEY" -d '{"key":"*"}'
-curl -X POST http://127.0.0.1:8737/v1/ui/press -H "X-API-Key: YOUR_KEY" -d '{"testid":"key-6"}'
-curl -X POST http://127.0.0.1:8737/v1/ui/key   -H "X-API-Key: YOUR_KEY" -d '{"key":"Enter"}'
+curl -X POST http://127.0.0.1:PORT/v1/ui/press -H "X-API-Key: YOUR_KEY" -d '{"testid":"key-7"}'
+curl -X POST http://127.0.0.1:PORT/v1/ui/key   -H "X-API-Key: YOUR_KEY" -d '{"key":"*"}'
+curl -X POST http://127.0.0.1:PORT/v1/ui/press -H "X-API-Key: YOUR_KEY" -d '{"testid":"key-6"}'
+curl -X POST http://127.0.0.1:PORT/v1/ui/key   -H "X-API-Key: YOUR_KEY" -d '{"key":"Enter"}'
 # {"view":"calc","display":"42","formula":"7 × 6 =", ...}
 ```
 

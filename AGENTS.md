@@ -12,6 +12,7 @@ family; it was the model project of the mini-framework.
 App specifics:
 
 - Engine in `internal/calc` (pure Go); `app.go` is the Wails adapter.
-- REST API port range **8700–8799**; domain endpoint `POST /v1/calc`.
+- REST API port: family-shared range **8000–8999**, random default per
+  install; domain endpoint `POST /v1/calc`.
 - Smoke suite: `go run ./tools/smoke` with the app open and the server on.
 - Gate before commit: `go vet ./...`, `go test ./...`, `wails build`, smoke.

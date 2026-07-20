@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	mrand "math/rand/v2"
 	"os"
 	"path/filepath"
 	"sync"
@@ -29,10 +30,17 @@ type Settings struct {
 }
 
 const (
-	appDir      = "go-calc"
-	fileName    = "settings.json"
-	defaultPort = 8737
+	appDir   = "go-calc"
+	fileName = "settings.json"
 )
+
+// randomPort picks the install's default API port at random from the family
+// range (8000–8999, shared by every go-apps app) — random defaults make two
+// apps landing on the same port near-impossible, and a collision just makes
+// Start fail with a clear error the user resolves with Shuffle.
+func randomPort() int {
+	return 8000 + mrand.IntN(1000)
+}
 
 var mu sync.Mutex
 
@@ -41,7 +49,7 @@ func Default() Settings {
 		Theme:        "dark",
 		Opacity:      100,
 		APIAutoStart: false,
-		APIPort:      defaultPort,
+		APIPort:      randomPort(),
 		APIKey:       GenerateKey(),
 		APIAllowlist: []string{"127.0.0.1/32"},
 		APIHTTPS:     false,
