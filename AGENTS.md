@@ -3,9 +3,9 @@
 Calculator of the [go-apps](https://github.com/viniciusbuscacio/go-apps)
 family; it was the model project of the mini-framework.
 
-**Before changing anything, read the family rules** — engineering:
-[go-apps/AGENTS.md](https://github.com/viniciusbuscacio/go-apps/blob/main/AGENTS.md)
-(local sibling checkout: `../go-apps/AGENTS.md`) — UI/visuals:
+**Before changing anything, read the family spec:**
+[`go-apps.spec`](https://github.com/viniciusbuscacio/go-apps/blob/main/go-apps.spec)
+(local sibling checkout: `../go-apps/go-apps.spec`). UI patterns and assets:
 [go-design](https://github.com/viniciusbuscacio/go-design)
 (`../go-design/README.md`). go-notepad is the family's visual reference.
 
